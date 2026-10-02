@@ -1,0 +1,5 @@
+# yt-dlp talks to YouTube; [default] adds its recommended helpers.
+# YouTube changes often, so keep yt-dlp up to date (pip install -U ...).
+yt-dlp[default]>=2026.8.19
+# JavaScript runtime that yt-dlp needs to read YouTube's player.
+deno>=2.0
