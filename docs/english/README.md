@@ -4,7 +4,7 @@ Read the finished book: [`YouTube_Downloader_Tutorial_en.pdf`](YouTube_Downloade
 
 To rebuild it, open `main.tex` in TeXstudio, select **XeLaTeX** as the compiler,
 and build twice. `config.tex` contains the fonts, colours, links, code-listing
-rules, and reusable boxes. The seven files in `chapters/` hold the tutorial content
+rules, and reusable boxes. The eight files in `chapters/` hold the tutorial content
 and are included by `main.tex`; compile only `main.tex`.
 
 The source prefers TeX Gyre Pagella and falls back to DejaVu Serif. It finds

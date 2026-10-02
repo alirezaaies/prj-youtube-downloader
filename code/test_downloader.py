@@ -22,8 +22,9 @@ class DownloaderTests(unittest.TestCase):
         name = downloader.file_name_template(PLAYLIST)
         self.assertTrue(name.startswith("%(playlist_title)s/"))
 
-    def test_default_folder_is_next_to_script(self):
-        self.assertEqual(downloader.SCRIPT_FOLDER, Path(downloader.__file__).resolve().parent)
+    def test_default_folder_is_downloads_next_to_script(self):
+        script_folder = Path(downloader.__file__).resolve().parent
+        self.assertEqual(downloader.DOWNLOAD_FOLDER, script_folder / "downloads")
 
     def test_options_use_given_folder_and_browser(self):
         options = downloader.build_options(VIDEO, "/tmp/videos", "firefox")
@@ -32,6 +33,18 @@ class DownloaderTests(unittest.TestCase):
 
     def test_retries_after_network_drop(self):
         self.assertEqual(downloader.build_options(VIDEO, "/tmp/videos")["retries"], 10)
+
+    def test_audio_only_becomes_mp3(self):
+        with patch("shutil.which", return_value="/usr/bin/ffmpeg"):
+            options = downloader.build_options(VIDEO, "/tmp/videos", audio=True)
+        self.assertEqual(options["format"], "bestaudio/best")
+        self.assertEqual(options["postprocessors"][0]["preferredcodec"], "mp3")
+
+    def test_audio_only_without_ffmpeg_keeps_original_file(self):
+        with patch("shutil.which", return_value=None):
+            options = downloader.build_options(VIDEO, "/tmp/videos", audio=True)
+        self.assertEqual(options["format"], "bestaudio/best")
+        self.assertNotIn("postprocessors", options)
 
     def test_quality_without_ffmpeg(self):
         with patch("shutil.which", return_value=None):

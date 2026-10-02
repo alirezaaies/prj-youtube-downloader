@@ -18,13 +18,18 @@ Created by **[Alireza Khajehvandi](https://alirezaaies.github.io/)**.
   video in it, numbered in playlist order: `01 - First video.mp4`,
   `02 - Second video.mp4`, …
 - **Save folder** → `-o FOLDER` chooses where files go. Without it, files are saved
-  in the folder that contains `downloader.py`, wherever you start it from.
+  in `code/downloads/` (next to `downloader.py`), wherever you start it from. Git
+  ignores that folder, so videos never end up in the repository.
+- **Only the sound** → `--audio` saves just the audio as an `.mp3` (192 kbit/s),
+  for single videos and whole playlists.
 - **Best quality that plays everywhere** → best video and audio joined into one
   `.mp4` (H.264 + AAC, usually 1080p).
-- **Friendly** → asks for the link if you forget it, and skips private or deleted
-  videos in a playlist instead of stopping.
+- **Friendly and robust** → asks for the link if you forget it, skips private or
+  deleted playlist videos, retries 10 times after a network drop, accepts links that
+  zsh pasted with `\?` and `\=`, and stops politely with `Ctrl+C` so the same command
+  can continue later.
 
-The whole program is one 99-line file built on the
+The whole program is one 119-line file built on the
 [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) library.
 
 ## Start in five minutes
@@ -68,12 +73,12 @@ python downloader.py "https://www.youtube.com/watch?v=jNQXAC9IVRw"
 Expected ending of the output:
 
 ```text
-Saving to: /.../prj-youtube-downloader/code
+Saving to: /.../prj-youtube-downloader/code/downloads
 ...
 Done. All files were downloaded.
 ```
 
-`Me at the zoo.mp4` is now next to `downloader.py`.
+`Me at the zoo.mp4` is now in `code/downloads/`.
 
 ## Usage
 
@@ -82,6 +87,8 @@ Done. All files were downloaded.
 | One video | `python downloader.py "https://www.youtube.com/watch?v=VIDEO_ID"` |
 | Whole playlist | `python downloader.py "https://www.youtube.com/playlist?list=PLAYLIST_ID"` |
 | Save in another folder | `python downloader.py "LINK" -o ~/Videos` |
+| Only the sound (MP3) | `python downloader.py "LINK" --audio` |
+| Stop now, continue later | press `Ctrl+C`, then run the same command again |
 | YouTube asks you to sign in | `python downloader.py "LINK" --browser firefox` |
 | Let the program ask for the link | `python downloader.py` |
 | Help | `python downloader.py --help` |
@@ -95,7 +102,7 @@ Get more creative with AI/
 └── ...
 ```
 
-Run the seven offline tests (no internet needed) from the `code` folder:
+Run the nine offline tests (no internet needed) from the `code` folder:
 
 ```bash
 python -m unittest -v
@@ -112,7 +119,8 @@ python -m unittest -v
 | Worked before, now fails | YouTube changed something: `python -m pip install -U "yt-dlp[default]"`. |
 | A whole playlist starts instead of one video | Remove `&list=...` from the link. |
 
-The tutorial's chapter 7 has the full troubleshooting table.
+The tutorial's chapter 8 has the full troubleshooting table, and chapter 7 explains how
+the network-drop and zsh problems were found and fixed.
 
 ## Repository map
 
@@ -121,8 +129,9 @@ prj-youtube-downloader/
 ├── code/
 │   ├── downloader.py           # the complete, commented program
 │   ├── requirements.txt        # yt-dlp[default] and deno
-│   ├── test_downloader.py      # seven offline tests
-│   └── README.md               # code-specific guide
+│   ├── test_downloader.py      # nine offline tests
+│   ├── README.md               # code-specific guide
+│   └── downloads/              # your downloads (created automatically, ignored by Git)
 ├── docs/
 │   ├── english/                # English book (XeLaTeX) + PDF
 │   ├── persian/                # Persian book (XePersian, RTL) + PDF
@@ -134,16 +143,17 @@ prj-youtube-downloader/
 
 ## The tutorial books
 
-Seven chapters, each with a goal, explanations, runnable examples, checkpoints, and
+Eight chapters, each with a goal, explanations, runnable examples, checkpoints, and
 expected results:
 
 1. What we will build
 2. Prepare Python, FFmpeg, and the project
 3. The Python tools we use (modules, functions, dictionaries, `pathlib`, `argparse`, …)
-4. Meet `yt-dlp` (formats, output templates, cookies)
+4. Meet `yt-dlp` (formats, output templates, post-processors, cookies)
 5. Write the program step by step
-6. Run and test the program
-7. Troubleshooting and next steps
+6. Run and test the program (videos, playlists, audio, Ctrl+C)
+7. Lessons from real use: how bugs were found and fixed, and why
+8. Troubleshooting and next steps
 
 See the [documentation build guide](docs/README.md) to rebuild the PDFs with XeLaTeX.
 
@@ -164,7 +174,10 @@ This project teaches Python; how you use it is your responsibility.
 - با **پیوند یک پلی‌لیست**، پوشه‌ای به نام پلی‌لیست می‌سازد و همهٔ ویدیوها را با
   عنوان دقیق و شماره‌گذاری به ترتیب پلی‌لیست در آن ذخیره می‌کند؛
 - با گزینهٔ `-o` در پوشهٔ دلخواه شما ذخیره می‌کند و اگر پوشه‌ای ندهید، فایل‌ها را
-  کنار خود `downloader.py` ذخیره می‌کند؛
+  در پوشهٔ `code/downloads/` ذخیره می‌کند که گیت آن را نادیده می‌گیرد؛
+- با گزینهٔ `--audio` فقط صدا را به شکل فایل `mp3` ذخیره می‌کند؛
+- پس از قطع شبکه تا ۱۰ بار دوباره تلاش می‌کند و با `Ctrl+C` مؤدبانه متوقف می‌شود تا
+  همان دستور بعداً ادامه دهد؛
 - بهترین تصویر و صدا را در یک فایل `mp4` ترکیب می‌کند که همه‌جا پخش می‌شود.
 
 📘 **کتاب آموزشی:** [نسخهٔ فارسی](docs/persian/YouTube_Downloader_Tutorial_fa.pdf) ·
@@ -191,6 +204,7 @@ python -m pip install -r requirements.txt
 ```bash
 python downloader.py "پیوند ویدیو یا پلی‌لیست"
 python downloader.py "پیوند" -o ~/Videos          # ذخیره در پوشهٔ دلخواه
+python downloader.py "پیوند" --audio              # فقط صدا (mp3)
 python downloader.py "پیوند" --browser firefox    # وقتی یوتیوب ورود می‌خواهد
 python downloader.py                              # برنامه پیوند را می‌پرسد
 ```
@@ -204,7 +218,7 @@ python downloader.py                              # برنامه پیوند را
 اگر برنامه‌ای که قبلاً کار می‌کرد ناگهان خطا داد، `yt-dlp` را با دستور
 `python -m pip install -U "yt-dlp[default]"` به‌روز کنید.
 
-کتاب آموزشی در هفت فصل، از نصب پایتون تا نوشتن خط‌به‌خط کد، اجرا، آزمون و رفع
+کتاب آموزشی در هشت فصل، از نصب پایتون تا نوشتن خط‌به‌خط کد، اجرا، آزمون و رفع
 اشکال را با مثال توضیح می‌دهد. فقط ویدیوهایی را دانلود کنید که اجازهٔ ذخیرهٔ آن‌ها
 را دارید و قوانین یوتیوب و حق نشر سازندگان را رعایت کنید.
 

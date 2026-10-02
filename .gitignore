@@ -217,11 +217,15 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Downloaded videos (never commit media files)
+# Downloaded videos and audio (never commit media files)
+# The program's default save folder:
+code/downloads/
 *.mp4
 *.mkv
 *.webm
 *.m4a
+*.mp3
+*.opus
 *.part
 *.ytdl
 

@@ -7,7 +7,7 @@ The tutorial is a small, chapter-based practical book in two editions:
 | English | [`english/YouTube_Downloader_Tutorial_en.pdf`](english/YouTube_Downloader_Tutorial_en.pdf) | [`english/README.md`](english/README.md) |
 | Persian (فارسی) | [`persian/YouTube_Downloader_Tutorial_fa.pdf`](persian/YouTube_Downloader_Tutorial_fa.pdf) | [`persian/README.md`](persian/README.md) |
 
-Both editions have the same seven chapters, code, commands, checkpoints,
+Both editions have the same eight chapters, code, commands, checkpoints,
 expected output, troubleshooting, and practice ideas. Only the language and the
 writing direction differ.
 
@@ -16,10 +16,11 @@ writing direction differ.
 | 1 | What we will build: behaviour, how it works, project structure |
 | 2 | Prepare Python, FFmpeg, the project folder, the environment, and the packages |
 | 3 | Every Python tool used in the program, each with a runnable example |
-| 4 | `yt-dlp`: format selection, output templates, settings, and cookies |
+| 4 | `yt-dlp`: format selection, output templates, settings, post-processors, and cookies |
 | 5 | Write `downloader.py` step by step, then the complete listing |
-| 6 | Run it for a video, a playlist, and a custom folder; the offline tests |
-| 7 | Troubleshooting table and practice ideas |
+| 6 | Run it for a video, a playlist, audio only, and a custom folder; stop and resume; the offline tests |
+| 7 | Lessons from real use: each bug found after release, how its cause was found, the fix, and its test |
+| 8 | Troubleshooting table and practice ideas |
 
 ## Requirements
 

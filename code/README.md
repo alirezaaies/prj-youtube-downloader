@@ -7,9 +7,10 @@ uses Python and the [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) library.
 
 | File | Purpose |
 |---|---|
-| `downloader.py` | The complete program: single video, whole playlist, output folder, optional browser login |
+| `downloader.py` | The complete program: single video, whole playlist, audio only, output folder, optional browser login |
 | `requirements.txt` | `yt-dlp` with its recommended helpers, plus the `deno` JavaScript runtime |
-| `test_downloader.py` | Seven offline tests (no internet needed) |
+| `test_downloader.py` | Nine offline tests (no internet needed) |
+| `downloads/` | Default save folder, created by the first download and ignored by Git |
 
 ## Install
 
@@ -35,9 +36,11 @@ python -m pip install -r requirements.txt
 
 | Goal | Command |
 |---|---|
-| One video, saved next to `downloader.py` | `python downloader.py "https://www.youtube.com/watch?v=VIDEO_ID"` |
-| Whole playlist, saved next to `downloader.py` | `python downloader.py "https://www.youtube.com/playlist?list=PLAYLIST_ID"` |
+| One video, saved in `downloads/` | `python downloader.py "https://www.youtube.com/watch?v=VIDEO_ID"` |
+| Whole playlist, saved in `downloads/` | `python downloader.py "https://www.youtube.com/playlist?list=PLAYLIST_ID"` |
 | Save in another folder | `python downloader.py "LINK" -o ~/Videos` |
+| Only the sound, as MP3 | `python downloader.py "LINK" --audio` |
+| Stop now, continue later | press `Ctrl+C`, then run the same command again |
 | YouTube asks you to sign in | `python downloader.py "LINK" --browser firefox` |
 | Let the program ask for the link | `python downloader.py` |
 | Show help | `python downloader.py --help` |
@@ -50,8 +53,10 @@ would otherwise treat as a special character.
 A single video is saved with its exact YouTube title:
 
 ```text
-Me at the zoo.mp4
+downloads/Me at the zoo.mp4
 ```
+
+With `--audio` the same video becomes `downloads/Me at the zoo.mp3`.
 
 A playlist gets a folder with the playlist title. Every video inside it is
 numbered in playlist order and keeps its exact title:
@@ -82,7 +87,7 @@ python -m unittest -v
 Expected ending:
 
 ```text
-Ran 7 tests in 0.001s
+Ran 9 tests in 0.001s
 
 OK
 ```

@@ -3,6 +3,7 @@
 Examples:
     python downloader.py "VIDEO_OR_PLAYLIST_LINK"
     python downloader.py "VIDEO_OR_PLAYLIST_LINK" -o ~/Videos
+    python downloader.py "VIDEO_OR_PLAYLIST_LINK" --audio
     python downloader.py "VIDEO_OR_PLAYLIST_LINK" --browser firefox
     python downloader.py          # asks for the link
 """
@@ -13,8 +14,9 @@ from pathlib import Path
 
 from yt_dlp import YoutubeDL
 
-# When no folder is given, files are saved next to this script.
+# When no folder is given, files go to a "downloads" folder next to this script.
 SCRIPT_FOLDER = Path(__file__).resolve().parent
+DOWNLOAD_FOLDER = SCRIPT_FOLDER / "downloads"
 
 
 def is_playlist(url):
@@ -40,7 +42,7 @@ def video_quality():
     return "best"
 
 
-def build_options(url, folder, browser=None):
+def build_options(url, folder, browser=None, audio=False):
     """Collect all settings in the dictionary that yt-dlp expects."""
     options = {
         "format": video_quality(),
@@ -53,19 +55,27 @@ def build_options(url, folder, browser=None):
         # Retry after a network drop (the Python default is 0 retries).
         "retries": 10,
     }
+    if audio:
+        # Only the sound: the best audio stream, converted to mp3 by ffmpeg.
+        options["format"] = "bestaudio/best"
+        if shutil.which("ffmpeg"):
+            options["postprocessors"] = [
+                {"key": "FFmpegExtractAudio", "preferredcodec": "mp3",
+                 "preferredquality": "192"},
+            ]
     if browser:
         # Reuse the YouTube login of this browser when YouTube asks for it.
         options["cookiesfrombrowser"] = (browser,)
     return options
 
 
-def download(url, folder=SCRIPT_FOLDER, browser=None):
+def download(url, folder=DOWNLOAD_FOLDER, browser=None, audio=False):
     """Download the link into folder. Return 0 when everything succeeded."""
     folder = Path(folder).expanduser().resolve()
     folder.mkdir(parents=True, exist_ok=True)
     print(f"Saving to: {folder}")
 
-    with YoutubeDL(build_options(url, folder, browser)) as ydl:
+    with YoutubeDL(build_options(url, folder, browser, audio)) as ydl:
         return ydl.download([url])
 
 
@@ -75,8 +85,12 @@ def main():
     )
     parser.add_argument("url", nargs="?", help="video or playlist link")
     parser.add_argument(
-        "-o", "--output", default=SCRIPT_FOLDER,
-        help="folder for the files (default: the folder of this script)",
+        "-o", "--output", default=DOWNLOAD_FOLDER,
+        help="folder for the files (default: downloads/ next to this script)",
+    )
+    parser.add_argument(
+        "-a", "--audio", action="store_true",
+        help="save only the sound, as an mp3 file",
     )
     parser.add_argument(
         "--browser",
@@ -89,7 +103,13 @@ def main():
     if not url:
         parser.error("a link is required")
 
-    if download(url, args.output, args.browser) == 0:
+    try:
+        result = download(url, args.output, args.browser, args.audio)
+    except KeyboardInterrupt:
+        print("\nStopped. Run the same command again to continue.")
+        return
+
+    if result == 0:
         print("Done. All files were downloaded.")
     else:
         print("Finished, but some files could not be downloaded (see the errors above).")
