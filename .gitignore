@@ -243,3 +243,6 @@ __marimo__/
 *.synctex.gz
 *.toc
 *.xdv
+
+# LaTeX build output (the renamed tutorial PDFs are published instead)
+docs/*/main.pdf
