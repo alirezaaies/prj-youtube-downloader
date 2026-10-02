@@ -50,6 +50,8 @@ def build_options(url, folder, browser=None):
         "paths": {"home": str(folder)},
         "outtmpl": file_name_template(url),
         "ignoreerrors": True,  # skip a private or deleted playlist video
+        # Retry after a network drop (the Python default is 0 retries).
+        "retries": 10,
     }
     if browser:
         # Reuse the YouTube login of this browser when YouTube asks for it.
@@ -83,6 +85,7 @@ def main():
     args = parser.parse_args()
 
     url = args.url or input("Paste a YouTube video or playlist link: ").strip()
+    url = url.replace("\\", "")  # zsh may paste ? and = as \? and \=
     if not url:
         parser.error("a link is required")
 

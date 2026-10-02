@@ -9,7 +9,7 @@ uses Python and the [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) library.
 |---|---|
 | `downloader.py` | The complete program: single video, whole playlist, output folder, optional browser login |
 | `requirements.txt` | `yt-dlp` with its recommended helpers, plus the `deno` JavaScript runtime |
-| `test_downloader.py` | Six offline tests (no internet needed) |
+| `test_downloader.py` | Seven offline tests (no internet needed) |
 
 ## Install
 
@@ -82,7 +82,7 @@ python -m unittest -v
 Expected ending:
 
 ```text
-Ran 6 tests in 0.001s
+Ran 7 tests in 0.001s
 
 OK
 ```
@@ -95,6 +95,12 @@ OK
   where `deno` was installed, or run `python -m pip install deno`.
 - **Download suddenly fails after it worked before**: YouTube changed something.
   Update with `python -m pip install -U "yt-dlp[default]"`.
+- **`Got error: ... bytes read, ... more expected`, and a `.f137.mp4.part`
+  (video) plus a `.f140.m4a` (audio) file are left**: the network dropped.
+  YouTube sends video and audio separately and FFmpeg joins them only when both
+  are complete. The program retries 10 times; if it still fails, run the same
+  command again. It continues the unfinished part, joins both, and deletes the
+  temporary files.
 - **Video has no sound or the quality is low**: FFmpeg is missing. Install it and
   check with `ffmpeg -version`.
 

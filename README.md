@@ -24,7 +24,7 @@ Created by **[Alireza Khajehvandi](https://alirezaaies.github.io/)**.
 - **Friendly** → asks for the link if you forget it, and skips private or deleted
   videos in a playlist instead of stopping.
 
-The whole program is one 96-line file built on the
+The whole program is one 99-line file built on the
 [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) library.
 
 ## Start in five minutes
@@ -95,7 +95,7 @@ Get more creative with AI/
 └── ...
 ```
 
-Run the six offline tests (no internet needed) from the `code` folder:
+Run the seven offline tests (no internet needed) from the `code` folder:
 
 ```bash
 python -m unittest -v
@@ -107,6 +107,7 @@ python -m unittest -v
 |---|---|
 | `Sign in to confirm you're not a bot` | Sign in to YouTube in a browser, close it, add `--browser firefox` (or `chrome`, `edge`, …). A VPN change can also help. |
 | `No supported JavaScript runtime could be found` | Activate the environment; `deno` comes from `requirements.txt` (`python -m pip install deno`). |
+| `Got error: ... bytes read, ... more expected`; a `.f137.mp4.part` (video) and a `.f140.m4a` (audio) file are left | The network dropped. The program retries 10 times; if it still fails, run the **same command** again: it continues the unfinished part and joins video and audio. |
 | No sound or low quality | FFmpeg is missing; check `ffmpeg -version`. |
 | Worked before, now fails | YouTube changed something: `python -m pip install -U "yt-dlp[default]"`. |
 | A whole playlist starts instead of one video | Remove `&list=...` from the link. |
@@ -120,7 +121,7 @@ prj-youtube-downloader/
 ├── code/
 │   ├── downloader.py           # the complete, commented program
 │   ├── requirements.txt        # yt-dlp[default] and deno
-│   ├── test_downloader.py      # six offline tests
+│   ├── test_downloader.py      # seven offline tests
 │   └── README.md               # code-specific guide
 ├── docs/
 │   ├── english/                # English book (XeLaTeX) + PDF
@@ -199,6 +200,7 @@ python downloader.py                              # برنامه پیوند را
 
 اگر پیام `Sign in to confirm you're not a bot` را دیدید، در مرورگر وارد یوتیوب شوید،
 مرورگر را ببندید و گزینهٔ `--browser firefox` (یا نام مرورگر خودتان) را اضافه کنید.
+اگر دانلود با خطای `Got error: ... bytes read` قطع شد و فقط فایل تصویر نیمه‌کاره و فایل صدا ماند، همان دستور را دوباره اجرا کنید تا دانلود ادامه یابد و تصویر و صدا ترکیب شوند.
 اگر برنامه‌ای که قبلاً کار می‌کرد ناگهان خطا داد، `yt-dlp` را با دستور
 `python -m pip install -U "yt-dlp[default]"` به‌روز کنید.
 

@@ -30,6 +30,9 @@ class DownloaderTests(unittest.TestCase):
         self.assertEqual(options["paths"], {"home": "/tmp/videos"})
         self.assertEqual(options["cookiesfrombrowser"], ("firefox",))
 
+    def test_retries_after_network_drop(self):
+        self.assertEqual(downloader.build_options(VIDEO, "/tmp/videos")["retries"], 10)
+
     def test_quality_without_ffmpeg(self):
         with patch("shutil.which", return_value=None):
             self.assertEqual(downloader.video_quality(), "best")
