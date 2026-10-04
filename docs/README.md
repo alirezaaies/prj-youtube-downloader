@@ -15,10 +15,10 @@ writing direction differ.
 |---|---|
 | 1 | What we will build: behaviour, how it works, project structure |
 | 2 | Prepare Python, FFmpeg, the project folder, the environment, and the packages |
-| 3 | Every Python tool used in the program, each with a runnable example |
-| 4 | `yt-dlp`: format selection, output templates, settings, post-processors, and cookies |
+| 3 | Every Python tool used in the program (including `subprocess.run` and `raise`), each with a runnable example |
+| 4 | `yt-dlp`: format selection, choosing a quality (the short side), output templates, settings, post-processors, and cookies |
 | 5 | Write `downloader.py` step by step, then the complete listing |
-| 6 | Run it for a video, a playlist, audio only, and a custom folder; stop and resume; the offline tests |
+| 6 | Run it for a video, a playlist, a quality, audio only, a custom FFmpeg, and a custom folder; stop and resume; the offline tests |
 | 7 | Lessons from real use: each bug found after release, how its cause was found, the fix, and its test |
 | 8 | Troubleshooting table and practice ideas |
 

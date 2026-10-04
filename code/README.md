@@ -7,9 +7,9 @@ uses Python and the [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) library.
 
 | File | Purpose |
 |---|---|
-| `downloader.py` | The complete program: single video, whole playlist, audio only, output folder, optional browser login |
+| `downloader.py` | The complete, commented program: single video, whole playlist, audio only, quality, FFmpeg location, output folder, optional browser login |
 | `requirements.txt` | `yt-dlp` with its recommended helpers, plus the `deno` JavaScript runtime |
-| `test_downloader.py` | Nine offline tests (no internet needed) |
+| `test_downloader.py` | 18 offline tests (no internet needed) |
 | `downloads/` | Default save folder, created by the first download and ignored by Git |
 
 ## Install
@@ -40,6 +40,9 @@ python -m pip install -r requirements.txt
 | Whole playlist, saved in `downloads/` | `python downloader.py "https://www.youtube.com/playlist?list=PLAYLIST_ID"` |
 | Save in another folder | `python downloader.py "LINK" -o ~/Videos` |
 | Only the sound, as MP3 | `python downloader.py "LINK" --audio` |
+| Another quality: this or lower (default 720) | `python downloader.py "LINK" --quality 480` |
+| Exactly this quality, else skip the video | `python downloader.py "LINK" --quality 1080 --exact-quality` |
+| FFmpeg is not on the PATH | `python downloader.py "LINK" --ffmpeg-location /path/to/ffmpeg/bin` |
 | Stop now, continue later | press `Ctrl+C`, then run the same command again |
 | YouTube asks you to sign in | `python downloader.py "LINK" --browser firefox` |
 | Let the program ask for the link | `python downloader.py` |
@@ -87,7 +90,7 @@ python -m unittest -v
 Expected ending:
 
 ```text
-Ran 9 tests in 0.001s
+Ran 18 tests in 0.001s
 
 OK
 ```
@@ -106,6 +109,14 @@ OK
   are complete. The program retries 10 times; if it still fails, run the same
   command again. It continues the unfinished part, joins both, and deletes the
   temporary files.
+- **`Requested format is not available` with `--exact-quality`**: that exact
+  quality does not exist for this video, so it was skipped (the rest of a playlist
+  still downloads). Choose another `--quality` or leave out `--exact-quality`.
+- **`Error: Cannot run FFmpeg at ...`**: the `--ffmpeg-location` path is wrong. Give
+  the FFmpeg program itself or the folder that contains it.
+- **`Error: FFmpeg exists but cannot run ... (exit code 0x...)`**: that FFmpeg is
+  broken or misses a library (`0xC0000135` on Windows = missing DLL). Reinstall it,
+  or point `--ffmpeg-location` to a working copy.
 - **Video has no sound or the quality is low**: FFmpeg is missing. Install it and
   check with `ffmpeg -version`.
 
