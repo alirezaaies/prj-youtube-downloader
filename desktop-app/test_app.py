@@ -1,0 +1,60 @@
+"""Offline checks for the desktop app's helpers. Run with: python -m unittest -v
+
+These tests never open a window and never use the internet.
+"""
+
+import unittest
+from unittest.mock import patch
+
+import app
+
+
+class AppHelperTests(unittest.TestCase):
+    def test_clean_link_removes_spaces_and_backslashes(self):
+        self.assertEqual(app.clean_link("  https://youtu.be/x\\?si\\=1 "),
+                         "https://youtu.be/x?si=1")
+
+    def test_human_size(self):
+        self.assertEqual(app.human_size(512), "512 B")
+        self.assertEqual(app.human_size(1536000), "1.5 MB")
+
+    def test_progress_text_for_a_playlist(self):
+        text = app.progress_text({"count": 15, "index": 2, "percent": 45.2,
+                                  "speed": 2200000, "eta": 42})
+        self.assertEqual(text, "Item 2 of 15  ·  Downloading 45%  ·  2.1 MB/s  ·  0:42 left")
+
+    def test_progress_text_without_details(self):
+        self.assertEqual(app.progress_text({"percent": None}), "Downloading")
+
+    def test_friendly_error_explains_sign_in(self):
+        hint = app.friendly_error("ERROR: [youtube] x: Sign in to confirm you're not a bot")
+        self.assertIn("Browser login", hint)
+
+    def test_friendly_error_is_empty_for_unknown_messages(self):
+        self.assertEqual(app.friendly_error("something new"), "")
+
+    def test_log_lines_become_short_and_readable(self):
+        self.assertEqual(app.readable_log_line("[download] Destination: /tmp/x/My video.f135.mp4"),
+                         "Saving My video.f135.mp4")
+        self.assertEqual(app.readable_log_line('[Merger] Merging formats into "/tmp/x/A.mp4"'),
+                         "Joining video and audio into A.mp4")
+        self.assertEqual(app.readable_log_line("[download] Downloading item 2 of 15"),
+                         "Downloading item 2 of 15")
+
+    def test_technical_log_lines_are_hidden(self):
+        self.assertIsNone(app.readable_log_line("[youtube] abc: Downloading webpage"))
+        self.assertIsNone(app.readable_log_line("Deleting original file /tmp/a.m4a"))
+
+    def test_chosen_ffmpeg_wins(self):
+        self.assertEqual(app.find_ffmpeg("/my/ffmpeg"), "/my/ffmpeg")
+
+    def test_no_bundled_tools_when_running_from_source(self):
+        self.assertIsNone(app.bundled_tool("ffmpeg"))
+
+    def test_missing_ffmpeg_everywhere(self):
+        with patch("shutil.which", return_value=None):
+            self.assertIsNone(app.find_ffmpeg(""))
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,0 +1,7 @@
+# Build results: share the archive from dist/, never commit it.
+build/
+dist/
+# Optional FFmpeg program to bundle (large, licensed separately).
+ffmpeg/
+# Python build environment.
+.venv/

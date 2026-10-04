@@ -1,0 +1,7 @@
+# Everything needed to run app.py from source and to build the desktop app.
+# yt-dlp talks to YouTube; [default] adds its recommended helpers.
+yt-dlp[default]>=2026.8.19
+# JavaScript runtime that YouTube needs; it is packed into the built app.
+deno>=2.0
+# Turns app.py into an app that runs without Python (used only for building).
+pyinstaller>=6.10
