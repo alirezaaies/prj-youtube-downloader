@@ -1,7 +1,12 @@
 # Everything needed to run app.py from source and to build the desktop app.
 # yt-dlp talks to YouTube; [default] adds its recommended helpers.
-yt-dlp[default]>=2026.8.19
+# Plain yt-dlp omits EJS. This tested nightly also includes newer YouTube clients.
+yt-dlp[default]>=2026.10.10.233141.dev0
 # JavaScript runtime that YouTube needs; it is packed into the built app.
-deno>=2.0
+deno>=2.3.0
+packaging>=23
 # Turns app.py into an app that runs without Python (used only for building).
 pyinstaller>=6.10
+# Shape Persian letters and order mixed Persian/English log text for Tk 8.
+arabic-reshaper>=3.0
+python-bidi>=0.6

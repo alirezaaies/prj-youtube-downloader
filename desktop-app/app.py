@@ -11,9 +11,13 @@ import shutil
 import subprocess
 import sys
 import threading
+import time
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
+from tkinter import font as tkfont
+
+from presentation import DownloadProgress, display_text
 
 # --- Where the program and its bundled files are -----------------------------
 APP_FOLDER = Path(__file__).resolve().parent
@@ -25,6 +29,7 @@ sys.path.insert(0, str(APP_FOLDER.parent / "code"))
 import downloader  # noqa: E402  (must come after the path is added)
 from yt_dlp import YoutubeDL  # noqa: E402
 from yt_dlp.utils import DownloadCancelled  # noqa: E402
+from yt_dlp.postprocessor import PostProcessor  # noqa: E402
 
 # A built window app has no console: send stray prints to "nowhere".
 if sys.stdout is None:
@@ -63,7 +68,7 @@ def javascript_runtime():
     """Describe the JavaScript runtime that YouTube downloads need (deno)."""
     if bundled_tool("deno"):
         return "built in"
-    if shutil.which("deno"):
+    if downloader.youtube_support.find_deno():
         return "deno from this computer"
     return ""
 
@@ -89,6 +94,8 @@ def progress_text(info):
         parts.append(f"Item {info['index']} of {info['count']}")
     percent = info.get("percent")
     parts.append(f"Downloading {percent:.0f}%" if percent is not None else "Downloading")
+    if info.get("parts", 1) > 1:
+        parts.append(f"Part {info['part']} of {info['parts']}")
     if info.get("speed"):
         parts.append(f"{human_size(info['speed'])}/s")
     if info.get("eta") is not None:
@@ -165,6 +172,18 @@ def open_folder(path):
 
 
 # --- The download itself (runs in a background thread) ----------------------
+class ProgressPlan(PostProcessor):
+    """Capture all selected streams before yt-dlp splits their progress hooks."""
+
+    def __init__(self, tracker):
+        super().__init__()
+        self.tracker = tracker
+
+    def run(self, info):
+        self.tracker.begin(info)
+        return [], info
+
+
 class QueueLogger:
     """Receives yt-dlp's messages and passes them on to the window."""
 
@@ -181,6 +200,10 @@ class QueueLogger:
 
     def warning(self, message):
         self.events.put(("log", f"Warning: {message}", "warning"))
+        if "n challenge solving failed" in message or "challenge solver script" in message:
+            self.events.put(("log", "Tip: The YouTube challenge solver is unavailable. "
+                             "Update the requirements and rebuild the application; "
+                             "refreshing the browser page does not repair it.", "hint"))
 
     def error(self, message):
         self.events.put(("log", message, "error"))
@@ -196,20 +219,21 @@ def run_download(job, events, cancel):
     touches it: it puts small messages into the events queue instead.
     """
 
+    tracker = DownloadProgress()
+    last_update = 0.0
+
     def on_progress(status):
+        nonlocal last_update
         if cancel.is_set():  # the Cancel button was pressed
             raise DownloadCancelled("Cancelled by the user")
-        if status["status"] == "downloading":
-            done = status.get("downloaded_bytes") or 0
-            total = status.get("total_bytes") or status.get("total_bytes_estimate")
-            video = status.get("info_dict", {})
-            events.put(("progress", {
-                "percent": done * 100 / total if total else None,
-                "speed": status.get("speed"),
-                "eta": status.get("eta"),
-                "index": video.get("playlist_index"),
-                "count": video.get("n_entries") or video.get("playlist_count"),
-            }))
+        if status["status"] in ("downloading", "finished"):
+            info = tracker.update(status)
+            now = time.monotonic()
+            if info is not None and (now - last_update >= 0.1 or status["status"] == "finished"):
+                events.put(("progress", info))
+                last_update = now
+                if info["transferred"]:
+                    events.put(("status", "Download complete. Finishing..."))
 
     def on_postprocess(status):
         if status["status"] == "started":
@@ -222,6 +246,9 @@ def run_download(job, events, cancel):
     try:
         # Stop early, with a clear message, if the chosen FFmpeg cannot run.
         downloader.check_ffmpeg(job["ffmpeg"])
+        deno = downloader.youtube_support.check_support(bundled_tool("deno"))
+        if cancel.is_set():
+            raise DownloadCancelled("Cancelled by the user")
         options = downloader.build_options(
             job["url"], job["folder"], job["browser"], job["audio"],
             job["ffmpeg"], job["quality"], job["exact"])
@@ -230,13 +257,11 @@ def run_download(job, events, cancel):
             "progress_hooks": [on_progress],       # percent, speed, time left
             "postprocessor_hooks": [on_postprocess],
             "noprogress": True,                    # no text progress bar
+            "js_runtimes": {"deno": {"path": deno}},
         })
-        deno = bundled_tool("deno")
-        if deno:
-            # The JavaScript runtime shipped with the app (YouTube needs one).
-            options["js_runtimes"] = {"deno": {"path": deno}}
         Path(job["folder"]).mkdir(parents=True, exist_ok=True)
         with YoutubeDL(options) as ydl:
+            ydl.add_post_processor(ProgressPlan(tracker), when="before_dl")
             result = ydl.download([job["url"]])
         events.put(("done", "ok" if result == 0 else "partial", ""))
     except DownloadCancelled:
@@ -276,14 +301,22 @@ class DownloaderWindow:
         """A clean, light theme based on ttk's portable 'clam' theme."""
         style = ttk.Style(self.root)
         style.theme_use("clam")
+        available = set(tkfont.families(self.root))
+        family = next((name for name in ("DejaVu Sans", "Noto Sans", "Segoe UI", "Tahoma", "Arial")
+                       if name in available), tkfont.nametofont("TkDefaultFont").actual("family"))
+        for name in ("TkDefaultFont", "TkTextFont", "TkMenuFont", "TkHeadingFont", "TkCaptionFont"):
+            tkfont.nametofont(name).configure(family=family, size=10)
+        self.body_font = tkfont.Font(self.root, family=family, size=10)
+        self.bold_font = tkfont.Font(self.root, family=family, size=10, weight="bold")
+        self.title_font = tkfont.Font(self.root, family=family, size=17, weight="bold")
         self.root.configure(background=BG)
-        style.configure(".", background=BG, foreground=TEXT)
+        style.configure(".", background=BG, foreground=TEXT, font=self.body_font)
         style.configure("Card.TFrame", background=CARD)
         style.configure("Card.TLabel", background=CARD, foreground=TEXT)
         style.configure("Muted.TLabel", background=CARD, foreground=MUTED)
         style.configure("Header.TFrame", background=ACCENT)
         style.configure("Title.TLabel", background=ACCENT, foreground="white",
-                        font=("TkDefaultFont", 17, "bold"))
+                        font=self.title_font)
         style.configure("Subtitle.TLabel", background=ACCENT, foreground="#F6D5D2")
         style.configure("Footer.TLabel", background=BG, foreground=MUTED)
         style.configure("Card.TRadiobutton", background=CARD)
@@ -294,7 +327,7 @@ class DownloaderWindow:
         style.configure("TCombobox", padding=4)
         style.configure("TButton", padding=(12, 6))
         style.configure("Accent.TButton", background=ACCENT, foreground="white",
-                        bordercolor=ACCENT, font=("TkDefaultFont", 10, "bold"),
+                        bordercolor=ACCENT, font=self.bold_font,
                         padding=(22, 8))
         style.map("Accent.TButton",
                   background=[("disabled", "#D9A5A1"), ("active", ACCENT_DARK)],
@@ -421,16 +454,16 @@ class DownloaderWindow:
         log_frame.rowconfigure(0, weight=1)
         self.log = tk.Text(log_frame, height=8, wrap="word", state="disabled",
                            relief="flat", bg=CARD, fg=MUTED, padx=10, pady=8,
-                           font=("TkFixedFont", 9), highlightthickness=1,
-                           highlightbackground="#E1E4E8")
+                           font=self.body_font, highlightthickness=1,
+                           highlightbackground="#E1E4E8", spacing1=3, spacing3=5)
         scroll = ttk.Scrollbar(log_frame, command=self.log.yview)
         self.log.configure(yscrollcommand=scroll.set)
         self.log.grid(row=0, column=0, sticky="nsew")
         scroll.grid(row=0, column=1, sticky="ns")
         self.log.tag_configure("error", foreground=RED)
         self.log.tag_configure("warning", foreground=ORANGE)
-        self.log.tag_configure("hint", foreground=TEXT, font=("TkDefaultFont", 9, "bold"))
-        self.log.tag_configure("ok", foreground=GREEN, font=("TkDefaultFont", 9, "bold"))
+        self.log.tag_configure("hint", foreground=TEXT, font=self.bold_font)
+        self.log.tag_configure("ok", foreground=GREEN, font=self.bold_font)
 
 
         ttk.Label(self.root, text="Download only videos you own or have permission "
@@ -448,9 +481,14 @@ class DownloaderWindow:
     def write_startup_check(self):
         """Tell the user at once whether the needed helper programs exist."""
         from yt_dlp.version import __version__ as yt_dlp_version
+        try:
+            ejs = downloader.youtube_support.check_installation()
+        except RuntimeError as exc:
+            self.write_log(str(exc), "error")
+            return
         runtime = javascript_runtime()
         if runtime:
-            self.write_log(f"Ready. yt-dlp {yt_dlp_version}, JavaScript runtime: "
+            self.write_log(f"Ready. yt-dlp {yt_dlp_version}, EJS {ejs}, JavaScript runtime: "
                            f"{runtime}.", "ok")
         else:
             self.write_log("Warning: no JavaScript runtime (deno) was found, so "
@@ -497,7 +535,7 @@ class DownloaderWindow:
 
     def write_log(self, text, tag="info"):
         self.log.configure(state="normal")
-        self.log.insert("end", text + "\n", tag)
+        self.log.insert("end", display_text(text) + "\n", tag)
         self.log.see("end")
         self.log.configure(state="disabled")
 
@@ -606,6 +644,16 @@ class DownloaderWindow:
 
 
 def main():
+    if "--check" in sys.argv:
+        try:
+            downloader.youtube_support.check_support(bundled_tool("deno"))
+            downloader.check_ffmpeg(find_ffmpeg())
+        except RuntimeError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        print(f"Ready. yt-dlp {downloader.youtube_support.ENGINE_VERSION}, "
+              f"EJS {downloader.youtube_support.check_installation()}, Deno verified.")
+        return 0
     if sys.platform == "win32":
         try:  # sharp text on high-resolution Windows screens
             import ctypes
@@ -621,4 +669,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

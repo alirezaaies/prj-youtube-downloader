@@ -33,7 +33,7 @@ Created by **[Alireza Khajehvandi](https://alirezaaies.github.io/)**.
   zsh pasted with `\?` and `\=`, and stops politely with `Ctrl+C` so the same command
   can continue later.
 
-The whole program is one 218-line, fully commented file built on the
+The shared downloader and its dependency checks are fully commented and built on the
 [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) library.
 
 ## Start in five minutes
@@ -109,13 +109,38 @@ Get more creative with AI/
 └── ...
 ```
 
-Run the 18 offline tests (no internet needed) from the `code` folder:
+Run the 26 offline tests (no internet needed) from the `code` folder:
 
 ```bash
 python -m unittest -v
 ```
 
 ## Common problems
+
+### Missing YouTube challenge solver (EJS)
+
+`n challenge solving failed`, `Remote component challenge solver script ... skipped`,
+and `The page needs to be reloaded` can result from missing or incompatible
+`yt-dlp-ejs` scripts. Deno is the runtime; it does not contain those scripts.
+Use `python -m pip install -U -r requirements.txt` in the relevant source folder.
+Keep `yt-dlp[default]`, which installs the matching solver. This project now checks
+the engine, solver version/files, and Deno before downloading and explicitly bundles
+them when building. See the [official EJS guide](https://github.com/yt-dlp/yt-dlp/wiki/EJS).
+
+The tested engine minimum is `2026.10.10.233141.dev0`, an official nightly with newer
+YouTube default clients. The August stable release alone does not include those
+changes. Normal quality selection still allows the best available lower resolution;
+`--exact-quality` is the explicit strict option.
+
+Validation on 2026-10-16: the current desktop worker downloaded all of
+`yt1TAv5U780` using Firefox login. FFprobe verified 1280×720 H.264 video with AAC
+audio, duration 1117.623 seconds, and size 42,036,932 bytes. All 53 offline tests
+passed. The fresh Linux executable passed its bundled-dependency check, including
+a negative check with a solver JS file temporarily removed.
+
+**Desktop users must rebuild and replace the entire app folder.** Updating pip
+does not change a previous executable. [Persian build instructions](desktop-app/BUILD.md)
+cover first-time setup, subsequent rebuilds, and checking the packaged version.
 
 | Problem | Fix |
 |---|---|
@@ -139,7 +164,7 @@ prj-youtube-downloader/
 ├── code/
 │   ├── downloader.py           # the complete, commented program
 │   ├── requirements.txt        # yt-dlp[default] and deno
-│   ├── test_downloader.py      # 18 offline tests
+│   ├── test_downloader.py      # offline downloader and dependency tests
 │   ├── README.md               # code-specific guide
 │   └── downloads/              # your downloads (created automatically, ignored by Git)
 ├── docs/

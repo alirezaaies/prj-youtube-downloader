@@ -22,10 +22,28 @@ from pathlib import Path
 
 import PyInstaller.__main__
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "code"))
+import youtube_support  # noqa: E402
+
 APP_NAME = "YouTube Downloader"
 HERE = Path(__file__).resolve().parent
 EXE = ".exe" if sys.platform == "win32" else ""
 SYSTEM = {"win32": "windows", "darwin": "macos"}.get(sys.platform, "linux")
+
+
+def check_tk_build():
+    """Prevent shipping the bitmap-only Linux Tk found in some Conda builds."""
+    if SYSTEM != "linux" or not shutil.which("ldd"):
+        return
+    import _tkinter
+    if not _tkinter.TK_VERSION.startswith("8."):
+        return
+    result = subprocess.run(["ldd", _tkinter.__file__], capture_output=True,
+                            text=True, errors="replace", timeout=15)
+    if result.returncode == 0 and "libXft" not in result.stdout:
+        raise RuntimeError("This Linux Tk build lacks Xft font rendering. "
+                           "Create the build environment with /usr/bin/python3 "
+                           "instead of Conda; see BUILD.md.")
 
 
 def find_deno():
@@ -54,6 +72,10 @@ def pyinstaller_arguments(deno, ffmpeg):
         "--onedir",                # a folder: starts fast, no unpacking
         "--noconfirm",             # replace an older build without asking
         "--clean",                 # start from an empty cache
+        "--collect-all", "yt_dlp_ejs",  # dynamically imported solver + JS data
+        "--copy-metadata", "yt-dlp",
+        "--copy-metadata", "yt-dlp-ejs",
+        "--collect-submodules", "yt_dlp.extractor.youtube.jsc",
         "--paths", str(HERE.parent / "code"),    # find downloader.py
         "--add-data", f"{HERE / 'assets' / 'icon.png'}{sep}assets",
         "--add-binary", f"{deno}{sep}bin",       # YouTube needs a JS runtime
@@ -96,8 +118,12 @@ def write_checksum(archive):
 
 
 def main():
+    check_tk_build()
     deno, ffmpeg = find_deno(), find_ffmpeg()
+    youtube_support.check_support(deno)
     print(f"Building {APP_NAME} for {SYSTEM}")
+    print(f"  yt-dlp: {youtube_support.ENGINE_VERSION}")
+    print(f"  EJS:    {youtube_support.check_installation()}")
     print(f"  deno:   {deno}")
     print(f"  ffmpeg: {ffmpeg or 'not bundled (the app uses the one on the computer)'}")
     PyInstaller.__main__.run(pyinstaller_arguments(deno, ffmpeg))

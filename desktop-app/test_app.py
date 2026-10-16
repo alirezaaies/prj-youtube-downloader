@@ -4,7 +4,9 @@ These tests never open a window and never use the internet.
 """
 
 import unittest
-from unittest.mock import patch
+import queue
+import threading
+from unittest.mock import patch, Mock
 
 import app
 
@@ -54,6 +56,35 @@ class AppHelperTests(unittest.TestCase):
     def test_missing_ffmpeg_everywhere(self):
         with patch("shutil.which", return_value=None):
             self.assertIsNone(app.find_ffmpeg(""))
+
+
+class SolverWorkerTests(unittest.TestCase):
+    def test_missing_ejs_stops_before_contacting_youtube(self):
+        events = queue.Queue()
+        with patch.object(app.downloader.youtube_support, "check_support",
+                          side_effect=RuntimeError("Missing yt-dlp-ejs")), \
+                patch.object(app, "YoutubeDL") as engine:
+            app.run_download({"ffmpeg": None}, events, threading.Event())
+        engine.assert_not_called()
+        self.assertEqual(events.get_nowait(), ("done", "error", "Missing yt-dlp-ejs"))
+
+    def test_worker_passes_verified_runtime_to_engine(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            events = queue.Queue()
+            engine = Mock()
+            engine.__enter__ = Mock(return_value=engine)
+            engine.__exit__ = Mock(return_value=False)
+            engine.download.return_value = 0
+            job = {"url": "https://youtu.be/yt1TAv5U780", "folder": folder,
+                   "browser": None, "audio": False, "ffmpeg": None,
+                   "quality": 720, "exact": False}
+            with patch.object(app.downloader.youtube_support, "check_support", return_value="/test/deno"), \
+                    patch.object(app, "YoutubeDL", return_value=engine) as factory:
+                app.run_download(job, events, threading.Event())
+            self.assertEqual(factory.call_args.args[0]["js_runtimes"],
+                             {"deno": {"path": "/test/deno"}})
+            self.assertEqual(events.get_nowait(), ("done", "ok", ""))
 
 
 if __name__ == "__main__":

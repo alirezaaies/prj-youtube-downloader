@@ -8,8 +8,10 @@ uses Python and the [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) library.
 | File | Purpose |
 |---|---|
 | `downloader.py` | The complete, commented program: single video, whole playlist, audio only, quality, FFmpeg location, output folder, optional browser login |
+| `youtube_support.py` | Checks the YouTube engine, matching EJS scripts and Deno |
+| `test_youtube_support.py` | Eight dependency and packaging regression tests |
 | `requirements.txt` | `yt-dlp` with its recommended helpers, plus the `deno` JavaScript runtime |
-| `test_downloader.py` | 18 offline tests (no internet needed) |
+| `test_downloader.py` | 18 downloader tests (no internet needed) |
 | `downloads/` | Default save folder, created by the first download and ignored by Git |
 
 ## Install
@@ -90,13 +92,18 @@ python -m unittest -v
 Expected ending:
 
 ```text
-Ran 18 tests in 0.001s
+Ran 26 tests in ...
 
 OK
 ```
 
 ## Common problems
 
+- **`n challenge solving failed` / missing EJS / page needs reloading**: install
+  with `python -m pip install -U -r requirements.txt`. `yt-dlp[default]` installs
+  the matching challenge solver; plain `yt-dlp` omits it. The engine, local scripts,
+  and Deno are checked before downloading. Refreshing the browser cannot repair
+  missing Python dependencies.
 - **`Sign in to confirm you're not a bot`**: log in to YouTube in a browser, close
   it, then add `--browser firefox` (or `chrome`, `edge`, `brave`, ...).
 - **`No supported JavaScript runtime could be found`**: activate the environment

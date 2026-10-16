@@ -98,3 +98,10 @@ screenshots in `docs/images/`.
 
 The LaTeX sources and helper files are ignored by Git (`.gitignore`). Only the two
 final PDFs are published in the repository.
+
+## Challenge-solver fix and readability update
+
+Both PDFs were rebuilt with increased prose line spacing (1.20), paragraph gaps,
+code line spacing, and table row spacing. Chapter 9 now documents the missing-EJS
+failure, the shared installation check, explicit packaging, full-video validation,
+and how to rebuild after source edits. See [the Persian build guide](../desktop-app/BUILD.md).

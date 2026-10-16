@@ -14,10 +14,12 @@ unpack it and double-click. It runs on Windows, macOS, and Linux.
 
 | File | Purpose |
 |---|---|
+| `presentation.py` | Stable combined progress and Persian display text |
+| `test_presentation.py` | Progress, RTL display, and Linux font-build regressions |
 | `app.py` | The window (Tkinter) and the background download; English comments throughout |
 | `build.py` | Builds the app for the current operating system with PyInstaller and packs it into one archive |
 | `requirements.txt` | `yt-dlp`, `deno` (YouTube needs a JavaScript runtime), and `pyinstaller` |
-| `test_app.py` | Eleven offline tests for the helper functions (no window, no internet) |
+| `test_app.py` | Offline helper and worker tests (no window, no internet) |
 | `assets/` | The app icon: `icon.png` (window, Linux), `icon.ico` (Windows), `icon.icns` (macOS) |
 | `ffmpeg/` | *Optional, you create it:* put an FFmpeg program here to bundle it into the app |
 
@@ -34,14 +36,27 @@ source .venv/bin/activate          # Windows PowerShell: .venv\Scripts\Activate.
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 python app.py                      # opens the window
-python -m unittest -v              # 11 tests, ends with OK
+python -m unittest -v              # 27 tests, ends with OK
 ```
 
 ## Build the app
 
+For complete Persian instructions, see [BUILD.md](BUILD.md). Update dependencies
+first with `python -m pip install -U -r requirements.txt`, then check the source
+with `python app.py --check`. After code edits, rerun the build below. Replacing
+pip packages does not update an already built executable.
+
 ```bash
 python build.py
 ```
+
+The builder validates the engine version, matching local EJS scripts, and Deno
+2.3+. It explicitly collects EJS modules, JavaScript files, and dependency metadata
+into the app. The startup log shows both yt-dlp and EJS versions. Installing plain
+`yt-dlp` without `[default]` omits the solver scripts and can cause `n challenge
+solving failed` or `The page needs to be reloaded`; refreshing YouTube does not
+repair those missing dependencies. Keep the tested nightly minimum in requirements
+for the newer YouTube default clients.
 
 | Built on | Result in `dist/` | Give this file to others |
 |---|---|---|
@@ -82,6 +97,19 @@ Check the archive before opening it: `certutil -hashfile FILE SHA256` (Windows),
 
 **Uninstall:** delete the app folder (or the `.app`) and the small settings file
 `.youtube-downloader.json` in your home folder.
+
+## Progress and Persian text
+
+Progress is combined across video/audio streams and remains nondecreasing for
+each video, even when HLS revises its byte estimates or retries a fragment. The
+bar uses fragment counts when available, reserves the last 2% for postprocessing,
+and reaches 100% only on success. A playlist starts a new bar for each item.
+
+The log uses a readable proportional font with Persian glyphs. Display-only
+letter shaping and bidirectional ordering fix mixed Persian/English titles in
+Tk 8; filenames and download metadata retain their original Unicode text.
+Linux builds require Tk with Xft. Follow [BUILD.md](BUILD.md) to create the build
+environment with `/usr/bin/python3`; some Conda builds only have bitmap fonts.
 
 ## Security and resources
 

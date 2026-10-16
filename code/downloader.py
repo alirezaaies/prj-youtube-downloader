@@ -17,6 +17,7 @@ import subprocess
 from pathlib import Path
 
 from yt_dlp import YoutubeDL
+import youtube_support
 
 # When no folder is given, files go to a "downloads" folder next to this script.
 SCRIPT_FOLDER = Path(__file__).resolve().parent
@@ -146,6 +147,7 @@ def download(url, folder=DOWNLOAD_FOLDER, browser=None, audio=False,
         location = shutil.which("ffmpeg")
     # Stop early with a clear message if that ffmpeg cannot run.
     check_ffmpeg(location)
+    deno = youtube_support.check_support()
 
     folder = Path(folder).expanduser().resolve()
     folder.mkdir(parents=True, exist_ok=True)
@@ -153,6 +155,7 @@ def download(url, folder=DOWNLOAD_FOLDER, browser=None, audio=False,
 
     options = build_options(url, folder, browser, audio, location,
                             quality, exact_quality)
+    options["js_runtimes"] = {"deno": {"path": deno}}
     with YoutubeDL(options) as ydl:
         return ydl.download([url])
 
